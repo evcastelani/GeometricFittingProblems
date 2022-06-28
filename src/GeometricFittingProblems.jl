@@ -120,10 +120,8 @@ function inverse_power_method(A::Array{Float64};q0=ones(size(A)[1]),ε=10.0^(-4)
     q = zeros(length(q0))
     while stop_criteria > ε && k<limit
         s = norm(q0,Inf)
-        #q0 = q0/norm(q0,Inf)
         q = B*(q0/s)
-        stop_criteria = norm(q-q0,Inf)
-        display(stop_criteria)
+        stop_criteria = norm(abs.(q)-abs.(q0),Inf)
         q0 = copy(q)
         k = k+1
     end
