@@ -1,8 +1,8 @@
 module GeometricFittingProblems
 
-using DelimitedFiles
+using DelimitedFiles, LinearAlgebra
 
-export load_problem, solve, build_problem
+export load_problem, solve, build_problem, inverse_power_method 
 
 import Base.show
 
@@ -92,6 +92,45 @@ function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Fl
     end
     if probtype == "sphere3D"
     
+    end
+end
+
+"""
+    inverse_power_method :: function
+
+This functions implements the inverse power method to find the smallest eigen value associated to an array A.
+
+# Examples
+```
+julia-repl
+
+julia> A = [1.0 2.0 0.0; 2.0 -5.0 3.0; 0.0 3.0 4.0]
+
+julia> inverse_power_method(A,[1.0,1.0,1.0])
+
+returns ???
+```
+"""
+function inverse_power_method(A::Array{Float64};q0=ones(size(A)[1]),ε=10.0^(-4),limit=100)
+    stop_criteria = 1000.0
+    F = lu(A)
+    B = inv(A)
+    k = 1
+    s = 0.0
+    q = zeros(length(q0))
+    while stop_criteria > ε && k<limit
+        s = norm(q0,Inf)
+        #q0 = q0/norm(q0,Inf)
+        q = B*(q0/s)
+        stop_criteria = norm(q-q0,Inf)
+        display(stop_criteria)
+        q0 = copy(q)
+        k = k+1
+    end
+    if k==limit
+        error("iteration limit of inverse power method was reached")
+    else
+        return q,1.0/s
     end
 end
 
