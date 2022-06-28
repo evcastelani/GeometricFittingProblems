@@ -1,0 +1,7 @@
+name = "GeometricFittingProblems"
+uuid = "730ab031-07f4-409a-b2bf-a5788b5c33d5"
+authors = ["evcastelani <emersonvitor@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
