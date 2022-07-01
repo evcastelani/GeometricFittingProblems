@@ -51,7 +51,21 @@ function load_problem(filename::String)
     return FitProbType(prob_matrix[1,2],eval(Meta.parse(prob_matrix[2,2])),prob_matrix[3,2],prob_matrix[4,2],eval(Meta.parse(prob_matrix[5,2])),prob_matrix[6,2],prob_matrix[7,2],prob_matrix[8,2],eval(Meta.parse(prob_matrix[9,2])),prob_matrix[10,2])
 end
 
+"""
+    solve :: Function
 
+This functions is able to solve a fitting problem previous loaded.
+
+# Examples
+```
+julia-repl
+julia> prob =  load_problem("sphere2D_50.0_50.0_8.0_10.csv")
+
+julia> solve(prob,[1.0,2.0,3.0],"CGA-Hypersphere")
+
+return the smallest positive eigen and eigen vector associated.
+```
+"""
 function solve(prob::FitProbType,θinit::Vector{Float64},method::String)
     if method == "CGA-Hypersphere"
         (N,n) = size(prob.data)
