@@ -53,7 +53,38 @@ end
 
 
 function solve(prob::FitProbType,θinit::Vector{Float64},method::String)
-
+    if method == "CGA-Hypersphere"
+        (N,n) = size(prob.data)
+        D = [prob.data';ones(1,N)]
+        v = [0.5*norm(D[1:n,i] ,2)^2 for i=1:N ]
+        D = [D ; v']
+        DDt = D*D'
+        M = zeros(n+2,n+2)
+        for i=1:n
+            M[i,i] = 1.0
+        end
+        M[n+1,n+2] = -1.0
+        M[n+2,n+1] = -1.0
+        p = (1.0/N)
+        P = p.*(DDt*M)
+        F = eigen(P)
+        indmin = 1
+        valmin = F.values[1]
+        for i = 2:n
+            if abs(valmin)>abs(F.values[i])
+                if F.values[i]>0.0
+                    indmin = i
+                    valmin = F.values[i] 
+                end
+            end
+        end
+        if valmin<=0.0
+            error("P does not have postive eigen value!")
+        end
+        return P
+        display(valmin)
+        display(F.vectors[:,indmin])
+    end
 end
 
 function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Float64})
@@ -83,7 +114,7 @@ function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Fl
             x[iout[k]]=x[iout[k]]+rand([0.25*r:0.1*(r);(1+0.25)*r])
             y[iout[k]]=y[iout[k]]+rand([0.25*r:0.1*(r);(1+0.25)*r])
         end
-        FileMatrix = ["name :" "sphere2D";"data :" [[x y]]; "npts :" npts;"nout :" nout; "model :" "(x,t) -> (x[1]-t[1])^2 - (x[2]-t[2])^2 - t[3]^2";"dim :" 3; "cluster :" "false"; "noise :" "false"; "solution :" [push!(c,r)]; "description :" "none"]
+        FileMatrix = ["name :" "sphere2D";"data :" [[x y]]; "npts :" npts;"nout :" nout; "model :" "(x,t) -> (x[1]-t[1])^2 + (x[2]-t[2])^2 - t[3]^2";"dim :" 3; "cluster :" "false"; "noise :" "false"; "solution :" [push!(c,r)]; "description :" "none"]
         
         open("sphere2D_$(c[1])_$(c[2])_$(c[3])_$(nout).csv", "w") do io
            writedlm(io, FileMatrix)
@@ -91,8 +122,42 @@ function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Fl
 
     end
     if probtype == "sphere3D"
-    
+        println("params need to be setup as [center,radious,npts,nout]")
+        c = [params[1], params[2], params[3]]
+        r = params[4]
+        npts = Int(params[5])
+        x = zeros(npts)
+        y = zeros(npts)
+        z = zeros(npts)
+        θ = [0.0:2*π/(npts-1):2*π;]
+        φ = [0.0:π/(npts-1):π;]
+        for k = 1:npts #forma de espiral - ao criar outro forma, se obtem metade dos circulos máximos
+            x[k] = c[1] + r * cos(θ[k]) * sin(φ[k])
+            y[k] = c[2] + r * sin(θ[k]) * sin(φ[k])
+            z[k] = c[3] + r * cos(φ[k])
+        end
+        nout = Int(params[6])
+        k = 1
+        iout = []
+        while k <= nout
+            i = rand([1:npts;])
+            if i ∉ iout
+                push!(iout, i)
+                k = k + 1
+            end
+        end
+        for k = 1:nout
+            x[iout[k]] = x[iout[k]] + rand([0.25*r:0.1*(r); (1 + 0.25) * r])
+            y[iout[k]] = y[iout[k]] + rand([0.25*r:0.1*(r); (1 + 0.25) * r])
+            z[iout[k]] = z[iout[k]] + rand([0.25*r:0.1*(r); (1 + 0.25) * r])
+        end
+        FileMatrix = ["name :" "sphere3D"; "data :" [[x y z]]; "npts :" npts; "nout :" nout; "model :" "(x,t) -> (x[1]-t[1])^2 + (x[2]-t[2])^2 +(x[3]-t[3])^2 - t[4]^2"; "dim :" 4; "cluster :" "false"; "noise :" "false"; "solution :" [push!(c, r)]; "description :" "none"]
+
+        open("sphere3D_$(c[1])_$(c[2])_$(c[3])_$(nout).csv", "w") do io #o que essa linha faz exatamente?
+            writedlm(io, FileMatrix)
+        end
     end
+
 end
 
 """
