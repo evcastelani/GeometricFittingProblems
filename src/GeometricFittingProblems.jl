@@ -91,12 +91,12 @@ function sort_sphere_res(P,x,nout)
     v = zeros(n)
     for i=1:n
         for j=1:m
-            v[i] = v[i]+(P[i,m]-x[j])^2
+            v[i] = v[i]+(P[i,j]-x[j])^2
         end
-        v[i] = (x[end]^2 - v[i])^2
+        v[i] = (v[i]-x[end]^2)^2
     end
     indtrust = [1:n;]
-    for i=1:n-nout    
+    for i=1:n-nout-1 
         for j=i+1:n
             if v[i]>v[j]
                 aux = v[j]
@@ -109,18 +109,18 @@ function sort_sphere_res(P,x,nout)
             end
         end
     end
-    println(indtrust[n-nout:n])
+#    println(indtrust[n-nout+1:n])
     return P[indtrust[1:n-nout],:], sum(v[1:n-nout])
 end
 
-function LOVOCGAHypersphere(data,nout)
+function LOVOCGAHypersphere(data,nout,ε=1.0e-4)
     θ = CGAHypersphere(data)
     ordres = sort_sphere_res(data,θ,nout)
     k = 1
-    for i=1:10    
-        println(k)
-        println(θ)
+    antres = 0.0
+    while abs(ordres[2]-antres) > ε
         display(ordres[2])
+        antres = ordres[2]
         θ = CGAHypersphere(ordres[1])
         ordres = sort_sphere_res(data,θ,nout)
         k = k+1
