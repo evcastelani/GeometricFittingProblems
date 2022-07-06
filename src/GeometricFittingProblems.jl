@@ -51,6 +51,86 @@ function load_problem(filename::String)
     return FitProbType(prob_matrix[1,2],eval(Meta.parse(prob_matrix[2,2])),prob_matrix[3,2],prob_matrix[4,2],eval(Meta.parse(prob_matrix[5,2])),prob_matrix[6,2],prob_matrix[7,2],prob_matrix[8,2],eval(Meta.parse(prob_matrix[9,2])),prob_matrix[10,2])
 end
 
+function CGAHypersphere(data;ε = 1.0e-4)
+    (N,n) = size(data)
+    D = [data';ones(1,N)]
+    v = [0.5*norm(D[1:n,i] ,2)^2 for i=1:N ]
+    D = [D ; v']
+    DDt = D*D'
+    M = zeros(n+2,n+2)
+    for i=1:n
+        M[i,i] = 1.0
+    end
+    M[n+1,n+2] = -1.0
+    M[n+2,n+1] = -1.0
+    p = (1.0/N)
+    P = p.*(DDt*M)
+    F = eigen(P)
+    indmin = 1
+    valmin = F.values[1]
+    for i = 2:n
+        if abs(valmin)>abs(F.values[i])
+            if F.values[i]>-ε   
+                indmin = i
+                valmin = F.values[i] 
+            end
+        end
+    end
+    if valmin<-ε
+        error("P does not have postive eigen value!")
+    end
+    xnorm = (1.0/(F.vectors[:,indmin][end-1]))*F.vectors[:,indmin]
+    center = xnorm[1:end-2]
+    
+    return push!(center,√(norm(center,2)^2 -2.0*xnorm[end]))
+end
+
+function sort_sphere_res(P,x,nout)
+    n = length(P[:,1])
+    m = length(P[1,:])
+    v = zeros(n)
+    for i=1:n
+        for j=1:m
+            v[i] = v[i]+(P[i,m]-x[j])^2
+        end
+        v[i] = (x[end]^2 - v[i])^2
+    end
+    indtrust = [1:n;]
+    for i=1:n-nout    
+        for j=i+1:n
+            if v[i]>v[j]
+                aux = v[j]
+                v[j] = v[i]
+                v[i] = aux
+                
+                aux2 = indtrust[j]
+                indtrust[j] = indtrust[i]
+                indtrust[i] = aux2
+            end
+        end
+    end
+    println(indtrust[n-nout:n])
+    return P[indtrust[1:n-nout],:], sum(v[1:n-nout])
+end
+
+function LOVOCGAHypersphere(data,nout)
+    θ = CGAHypersphere(data)
+    ordres = sort_sphere_res(data,θ,nout)
+    k = 1
+    for i=1:10    
+        println(k)
+        println(θ)
+        display(ordres[2])
+        θ = CGAHypersphere(ordres[1])
+        ordres = sort_sphere_res(data,θ,nout)
+        k = k+1
+    end
+    display(k)
+    display(θ)
+
+end
+
+
 """
     solve :: Function
 
@@ -61,43 +141,17 @@ This functions is able to solve a fitting problem previous loaded.
 julia-repl
 julia> prob =  load_problem("sphere2D_50.0_50.0_8.0_10.csv")
 
-julia> solve(prob,[1.0,2.0,3.0],"CGA-Hypersphere")
+julia> solve(prob,"CGA-Hypersphere")
 
 return the smallest positive eigen and eigen vector associated.
 ```
 """
-function solve(prob::FitProbType,θinit::Vector{Float64},method::String)
+function solve(prob::FitProbType,method::String)
     if method == "CGA-Hypersphere"
-        (N,n) = size(prob.data)
-        D = [prob.data';ones(1,N)]
-        v = [0.5*norm(D[1:n,i] ,2)^2 for i=1:N ]
-        D = [D ; v']
-        DDt = D*D'
-        M = zeros(n+2,n+2)
-        for i=1:n
-            M[i,i] = 1.0
-        end
-        M[n+1,n+2] = -1.0
-        M[n+2,n+1] = -1.0
-        p = (1.0/N)
-        P = p.*(DDt*M)
-        F = eigen(P)
-        indmin = 1
-        valmin = F.values[1]
-        for i = 2:n
-            if abs(valmin)>abs(F.values[i])
-                if F.values[i]>0.0
-                    indmin = i
-                    valmin = F.values[i] 
-                end
-            end
-        end
-        if valmin<=0.0
-            error("P does not have postive eigen value!")
-        end
-        return P
-        display(valmin)
-        display(F.vectors[:,indmin])
+        return CGAHypersphere(prob.data)
+    end
+    if method == "LOVO-CGA-Hypersphere"
+        LOVOCGAHypersphere(prob.data,prob.nout)
     end
 end
 
@@ -129,9 +183,9 @@ function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Fl
             y[iout[k]]=y[iout[k]]+rand([0.25*r:0.1*(r);(1+0.25)*r])
         end
         FileMatrix = ["name :" "sphere2D";"data :" [[x y]]; "npts :" npts;"nout :" nout; "model :" "(x,t) -> (x[1]-t[1])^2 + (x[2]-t[2])^2 - t[3]^2";"dim :" 3; "cluster :" "false"; "noise :" "false"; "solution :" [push!(c,r)]; "description :" "none"]
-        
+
         open("sphere2D_$(c[1])_$(c[2])_$(c[3])_$(nout).csv", "w") do io
-           writedlm(io, FileMatrix)
+            writedlm(io, FileMatrix)
         end
 
     end
