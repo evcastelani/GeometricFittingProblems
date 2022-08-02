@@ -96,7 +96,7 @@ function sort_sphere_res(P,x,nout)
         v[i] = (v[i]-x[end]^2)^2
     end
     indtrust = [1:n;]
-    for i=1:n-nout-1 
+    for i=1:n-1 
         for j=i+1:n
             if v[i]>v[j]
                 aux = v[j]
@@ -109,12 +109,13 @@ function sort_sphere_res(P,x,nout)
             end
         end
     end
-#    println(indtrust[n-nout+1:n])
+    println(indtrust[n-nout+1:n])
     return P[indtrust[1:n-nout],:], sum(v[1:n-nout])
 end
 
 function LOVOCGAHypersphere(data,nout,ε=1.0e-4)
     θ = CGAHypersphere(data)
+    println(θ)
     ordres = sort_sphere_res(data,θ,nout)
     k = 1
     antres = 0.0
@@ -122,6 +123,7 @@ function LOVOCGAHypersphere(data,nout,ε=1.0e-4)
         display(ordres[2])
         antres = ordres[2]
         θ = CGAHypersphere(ordres[1])
+        println(θ)
         ordres = sort_sphere_res(data,θ,nout)
         k = k+1
     end
@@ -221,7 +223,7 @@ function build_problem(probtype::String,limit::Vector{Float64},params::Vector{Fl
         end
         FileMatrix = ["name :" "sphere3D"; "data :" [[x y z]]; "npts :" npts; "nout :" nout; "model :" "(x,t) -> (x[1]-t[1])^2 + (x[2]-t[2])^2 +(x[3]-t[3])^2 - t[4]^2"; "dim :" 4; "cluster :" "false"; "noise :" "false"; "solution :" [push!(c, r)]; "description :" "none"]
 
-        open("sphere3D_$(c[1])_$(c[2])_$(c[3])_$(nout).csv", "w") do io #o que essa linha faz exatamente?
+        open("sphere3D_$(c[1])_$(c[2])_$(c[3])_$(c[4])_$(nout).csv", "w") do io #o que essa linha faz exatamente?
             writedlm(io, FileMatrix)
         end
     end
