@@ -6,6 +6,7 @@ export load_problem, solve, build_problem, inverse_power_method
 
 import Base.show
 
+
 """
     FitProbType
 
@@ -96,7 +97,7 @@ function sort_sphere_res(P,x,nout)
         v[i] = (v[i]-x[end]^2)^2
     end
     indtrust = [1:n;]
-    for i=1:n-1 
+    for i=1:n-nout+1 
         for j=i+1:n
             if v[i]>v[j]
                 aux = v[j]
@@ -109,13 +110,12 @@ function sort_sphere_res(P,x,nout)
             end
         end
     end
-    println(indtrust[n-nout+1:n])
+#    println(indtrust[n-nout+1:n])
     return P[indtrust[1:n-nout],:], sum(v[1:n-nout])
 end
 
-function LOVOCGAHypersphere(data,nout,ε=1.0e-4)
-    θ = CGAHypersphere(data)
-    println(θ)
+function LOVOCGAHypersphere(data,nout,θ,ε=1.0e-4)
+
     ordres = sort_sphere_res(data,θ,nout)
     k = 1
     antres = 0.0
@@ -138,22 +138,44 @@ end
 
 This functions is able to solve a fitting problem previous loaded.
 
-# Examples
+# Example
 ```
 julia-repl
 julia> prob =  load_problem("sphere2D_50.0_50.0_8.0_10.csv")
 
 julia> solve(prob,"CGA-Hypersphere")
 
-return the smallest positive eigen and eigen vector associated.
 ```
+return the smallest positive eigen and eigen vector associated which give to us the desired parameters.
+
+# Example
+```
+julia-repl
+julia> prob =  load_problem("sphere2D_50.0_50.0_8.0_10.csv")
+
+julia> solve(prob,"LOVO-CGA-Hypersphere")
+
+```
+return the desired parameters.
+
+another way to run is using a particular initial guess.
+
+# Example
+```
+julia-repl
+julia> prob =  load_problem("sphere2D_50.0_50.0_8.0_10.csv")
+
+julia> solve(prob,"LOVO-CGA-Hypersphere",rand(3))
+
+```
+
 """
-function solve(prob::FitProbType,method::String)
+function solve(prob::FitProbType,method::String, initθ = CGAHypersphere(prob.data))
     if method == "CGA-Hypersphere"
         return CGAHypersphere(prob.data)
     end
     if method == "LOVO-CGA-Hypersphere"
-        LOVOCGAHypersphere(prob.data,prob.nout)
+        LOVOCGAHypersphere(prob.data,prob.nout,initθ)
     end
 end
 
