@@ -1,6 +1,7 @@
 module GeometricFittingProblems
 
-using DelimitedFiles, LinearAlgebra
+
+using DelimitedFiles, LinearAlgebra, Plots
 
 export load_problem, solve, build_problem, inverse_power_method 
 
@@ -127,8 +128,8 @@ function LOVOCGAHypersphere(data,nout,θ,ε=1.0e-4)
         ordres = sort_sphere_res(data,θ,nout)
         k = k+1
     end
-    display(k)
-    display(θ)
+ #   display(k)
+    return θ
 
 end
 
@@ -288,6 +289,20 @@ function inverse_power_method(A::Array{Float64};q0=ones(size(A)[1]),ε=10.0^(-4)
         return q,1.0/s
     end
 end
+
+function visualize(prob,answer)
+    
+    plt = plot()
+    if prob.name == "sphere2D" || prob.name == "\tsphere2D"
+        plot!(plt,prob.data[:,1],prob.data[:,2],line=:scatter,aspect_ratio=:equal)
+        θ = [0.0:2*π/360:2*π;]
+        x = answer[1].+answer[3]*cos.(θ)
+        y = answer[2].+answer[3]*sin.(θ)
+        plot!(plt,x,y)
+        display(plt)
+    end
+end
+
 
 function show(io::IO, fout::FitOutputType)
 
