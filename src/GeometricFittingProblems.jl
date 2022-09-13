@@ -58,15 +58,21 @@ function CGAHypersphere(data;ε = 1.0e-4)
     D = [data';ones(1,N)]
     v = [0.5*norm(D[1:n,i] ,2)^2 for i=1:N ]
     D = [D ; v']
+    #println("First D")
+    #display(D)
     DDt = D*D'
-    M = zeros(n+2,n+2)
-    for i=1:n
-        M[i,i] = 1.0
-    end
-    M[n+1,n+2] = -1.0
-    M[n+2,n+1] = -1.0
+    #println("Second D")
+    #M = zeros(n+2,n+2)
+    #for i=1:n
+       # M[i,i] = 1.0
+    #end
+    #M[n+1,n+2] = -1.0
+    #M[n+2,n+1] = -1.0
+    aux = -copy(DDt[:,n+1])
+    DDt[:,n+1] = -DDt[:,n+2]
+    DDt[:,n+2] = aux
     p = (1.0/N)
-    P = p.*(DDt*M)
+    P = p.*(DDt)
     F = eigen(P)
     indmin = 1
     valmin = F.values[1]
@@ -97,6 +103,8 @@ function sort_sphere_res(P,x,nout)
         end
         v[i] = (v[i]-x[end]^2)^2
     end
+   # println("Residuos")
+   # display(v)
     indtrust = [1:n;]
     for i=1:n-nout+1 
         for j=i+1:n
